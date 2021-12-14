@@ -247,10 +247,16 @@ nextPlanetRank g@(GameState planets _ _) pr i =
   growth i  = (\(Planet _ _ g) -> fromIntegral g) 
                                   (planets M.! i)
   targets :: PlanetId -> [PlanetId]
-  targets i = undefined
+  targets i = map (\(_, (Wormhole _ (Target t) _)) -> t) (edgesFrom g i)
+
+  sources :: PlanetId -> [PlanetId]
+  sources i = map (\(_, (Wormhole (Source s) _ _)) -> s) (edgesTo g i)
  
   growths :: PlanetId -> PlanetRank
-  growths j = undefined
+  growths j = (fromIntegral . sum)
+      (map (\pId -> let (Planet _ _ g) = planets M.! pId 
+                    in g) 
+           (sources j))
 
 checkPlanetRanks :: PlanetRanks -> PlanetRank
 checkPlanetRanks = sum . M.elems
