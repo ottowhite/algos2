@@ -61,19 +61,18 @@ myPlanet (Planet (Owned Player1) _ _) = True
 myPlanet _                            = False
 
 findEnemyPlanet :: GameState -> Maybe PlanetId
-findEnemyPlanet (GameState ps _ _) 
-  = let eps = M.keys (M.filter enemyPlanet ps) in case eps of
-    []         -> Nothing
-    (ep : eps) -> Just ep
+findEnemyPlanet (GameState ps _ _) = case M.keys (M.filter enemyPlanet ps) of
+  []         -> Nothing
+  (ep : eps) -> Just ep
 
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId ss st
   | myPlanet srcp = [(Order wId cappedShips)]
   | otherwise     = []
- where
-  Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
-  srcp@(Planet _ srcShips _)           = lookupPlanet src st
-  dstp@(Planet _ dstShips _)           = lookupPlanet dst st
+    where
+      Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
+      srcp@(Planet _ srcShips _)           = lookupPlanet src st
+      dstp@(Planet _ dstShips _)           = lookupPlanet dst st
 
   ships = case ss of
     Nothing -> srcShips
