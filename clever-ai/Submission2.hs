@@ -55,7 +55,10 @@ enemyPlanet (Planet (Owned Player2) _ _) = True
 enemyPlanet _                            = False
 
 findEnemyPlanet :: GameState -> Maybe PlanetId
-findEnemyPlanet = undefined
+findEnemyPlanet (GameState ps _ _) 
+  = let eps = M.keys (M.filter enemyPlanet ps) in case eps of
+    []         -> Nothing
+    (ep : eps) -> Just ep
 
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId mShips st = undefined
