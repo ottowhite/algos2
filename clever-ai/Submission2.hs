@@ -69,18 +69,18 @@ send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId ss st
   | myPlanet srcp = [(Order wId cappedShips)]
   | otherwise     = []
-    where
-      Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
-      srcp@(Planet _ srcShips _)           = lookupPlanet src st
-      dstp@(Planet _ dstShips _)           = lookupPlanet dst st
+  where
+    Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
+    srcp@(Planet _ srcShips _)           = lookupPlanet src st
+    dstp@(Planet _ dstShips _)           = lookupPlanet dst st
 
-  ships = case ss of
-    Nothing -> srcShips
-    _       -> minimum [fromJust ss, srcShips]
+    ships = case ss of
+      Nothing -> srcShips
+      _       -> minimum [fromJust ss, srcShips]
 
-  cappedShips
-    | enemyPlanet dstp = minimum [ships, dstShips]
-    | otherwise        = ships
+    cappedShips
+      | enemyPlanet dstp = minimum [ships, dstShips]
+      | otherwise        = ships
 
 shortestPath :: PlanetId -> PlanetId -> GameState 
              -> Maybe (Path (WormholeId, Wormhole))
