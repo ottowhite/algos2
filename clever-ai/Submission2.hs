@@ -56,10 +56,6 @@ enemyPlanet :: Planet -> Bool
 enemyPlanet (Planet (Owned Player2) _ _) = True
 enemyPlanet _                            = False
 
-myPlanet :: Planet -> Bool
-myPlanet (Planet (Owned Player1) _ _) = True
-myPlanet _                            = False
-
 findEnemyPlanet :: GameState -> Maybe PlanetId
 findEnemyPlanet (GameState ps _ _) = case M.keys (M.filter enemyPlanet ps) of
   []         -> Nothing
@@ -67,7 +63,7 @@ findEnemyPlanet (GameState ps _ _) = case M.keys (M.filter enemyPlanet ps) of
 
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId ss st
-  | myPlanet srcp = [(Order wId cappedShips)]
+  | ourPlanet srcp = [(Order wId cappedShips)]
   | otherwise     = []
   where
     Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
