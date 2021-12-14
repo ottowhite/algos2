@@ -38,11 +38,13 @@ logic strat gs ai
 
 data AIState = AIState
   { turn :: Turns
+  , rushTarget :: Maybe PlanetId
   } deriving Generic
  
 initialState :: AIState
 initialState = AIState
   { turn = 0
+  , rushTarget = Nothing
   }
 
 type Log = [String]
@@ -54,6 +56,10 @@ enemyPlanet :: Planet -> Bool
 enemyPlanet (Planet (Owned Player2) _ _) = True
 enemyPlanet _                            = False
 
+myPlanet :: Planet -> Bool
+myPlanet (Planet (Owned Player1) _ _) = True
+myPlanet _                            = False
+
 findEnemyPlanet :: GameState -> Maybe PlanetId
 findEnemyPlanet (GameState ps _ _) 
   = let eps = M.keys (M.filter enemyPlanet ps) in case eps of
@@ -61,10 +67,21 @@ findEnemyPlanet (GameState ps _ _)
     (ep : eps) -> Just ep
 
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
-send wId mShips st = undefined
+send wId ss st
+  | myPlanet srcp = [(Order wId cappedShips)]
+  | otherwise     = []
  where
-  Wormhole (Source src) _ _ = lookupWormhole wId st
-  planet@(Planet _ totalShips _) = lookupPlanet src st
+  Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
+  srcp@(Planet _ srcShips _)           = lookupPlanet src st
+  dstp@(Planet _ dstShips _)           = lookupPlanet dst st
+
+  ships = case ss of
+    Nothing -> srcShips
+    _       -> minimum [fromJust ss, srcShips]
+
+  cappedShips
+    | enemyPlanet dstp = minimum [ships, dstShips]
+    | otherwise        = ships
 
 shortestPath :: PlanetId -> PlanetId -> GameState 
              -> Maybe (Path (WormholeId, Wormhole))
