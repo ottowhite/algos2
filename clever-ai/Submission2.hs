@@ -82,7 +82,7 @@ shortestPath :: PlanetId -> PlanetId -> GameState
              -> Maybe (Path (WormholeId, Wormhole))
 shortestPath src dst st
   = case filter ((== dst) . target) (shortestPaths st src) of
-      [] -> Nothing
+      []      -> Nothing
       (x : _) -> Just x
 
 ourPlanet :: Planet -> Bool
@@ -101,8 +101,17 @@ lookupPlanet pId (GameState planets _ _)
   = planets M.! pId
 
 attackFromAll :: PlanetId -> GameState -> [Order]
-attackFromAll targetId gs
-  = undefined
+attackFromAll targetId st@(GameState ps _ _)
+  = concat (map (\wId -> send wId Nothing st) wIds)
+  where
+    ourPlanets = M.filter ourPlanet ps 
+    paths      = map (\src -> shortestPath src targetId st) (M.keys ourPlanets)
+    wIds       = map (getWormholeId . fromJust) (filter isJust paths)
+
+    getWormholeId :: Path (WormholeId, Wormhole) -> WormholeId
+    getWormholeId (Path _ ((wId, _) : _)) = wId
+    
+
 
 zergRush :: GameState -> AIState 
          -> ([Order], Log, AIState)
@@ -128,7 +137,10 @@ example1 = [("a","b",1), ("a","c",1), ("a","d",1),
             ("b","a",1), ("c","a",1), ("d","a",1), ("c","d",1)]
 
 initPageRank' :: Map pageId a -> PageRanks pageId
-initPageRank' = undefined
+initPageRank' m = M.map (const (1 / fromIntegral n)) m
+  where
+    n  = length m
+    
 
 nextPageRank :: (Ord pageId, Edge e pageId, Graph g e pageId) => 
   g -> PageRanks pageId -> pageId -> PageRank
@@ -178,7 +190,7 @@ iterateMaybe f x = x : maybe [] (iterateMaybe f) (f x)
 
 pageRank' :: (Ord pageId, Graph g e pageId) =>
   g -> PageRanks pageId
-pageRank' g = undefined
+pageRank' g = (last . take 200) (pageRanks' g 0.0001)
 
 example2 :: GameState
 example2 = GameState planets wormholes fleets where
