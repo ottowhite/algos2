@@ -118,7 +118,7 @@ zergRush :: GameState -> AIState
          -> ([Order], Log, AIState)
 zergRush gs@(GameState planets _ _) ai = (orders, 
                                           [], 
-                                          ai {rushTarget = target'} )
+                                          ai {rushTarget = target} )
   where
     ourPlanetId :: PlanetId -> Bool
     ourPlanetId = ourPlanet . ((flip lookupPlanet) gs)
@@ -128,13 +128,9 @@ zergRush gs@(GameState planets _ _) ai = (orders,
         (ourPlanetId . fromJust) (rushTarget ai) = findEnemyPlanet gs
       | otherwise                                = rushTarget ai
 
-    target'
-      | isNothing target = findOtherPlanet gs
-      | otherwise        = target
-
     orders
-      | isNothing target' = []
-      | otherwise         = attackFromAll (fromJust target') gs
+      | isNothing target = []
+      | otherwise         = attackFromAll (fromJust target) gs
       
 newtype PageRank = PageRank Double
   deriving (Num, Eq, Ord, Fractional)
@@ -281,7 +277,7 @@ checkPlanetRanks = sum . M.elems
 
 planetRankRush :: GameState -> AIState 
                -> ([Order], Log, AIState)
-planetRankRush gs@(GameState ps _ _) ai = (orders, log, ai {pr = mpr})
+planetRankRush gs@(GameState ps _ _) ai = (orders, [], ai {pr = mpr})
   where
     mpr :: Maybe (PageRanks PlanetId)
     mpr 
@@ -293,9 +289,11 @@ planetRankRush gs@(GameState ps _ _) ai = (orders, log, ai {pr = mpr})
     target = foldl (\pId maxPId -> if (pr' M.! pId) > (pr' M.! maxPId)
                                    then pId 
                                    else maxPId) 
-                 0 
-                 (M.keys (M.filter (not . ourPlanet) ps)) 
-    log = []
+                   0 
+                   (let p = M.keys (M.filter enemyPlanet ps) in case p of
+                      []        -> (M.keys (M.filter (not . ourPlanet) ps)) 
+                      otherwise -> p)
+                   
     orders = attackFromAll target gs
     
 
