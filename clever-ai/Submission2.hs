@@ -39,12 +39,14 @@ logic strat gs ai
 data AIState = AIState
   { turn :: Turns
   , rushTarget :: Maybe PlanetId
+  , pr :: Maybe (PageRanks PlanetId)
   } deriving Generic
  
 initialState :: AIState
 initialState = AIState
   { turn = 0
   , rushTarget = Nothing
+  , pr = Nothing
   }
 
 type Log = [String]
@@ -279,7 +281,25 @@ checkPlanetRanks = sum . M.elems
 
 planetRankRush :: GameState -> AIState 
                -> ([Order], Log, AIState)
-planetRankRush _ _ = undefined
+planetRankRush gs@(GameState ps _ _) ai = (orders, log, ai {pr = mpr})
+  where
+    mpr :: Maybe (PageRanks PlanetId)
+    mpr 
+      | isNothing (pr ai) = Just (pageRank' gs) 
+      | otherwise         = (pr ai)
+
+    pr'  = (fromJust mpr)
+
+    target = foldl (\pId maxPId -> if (pr' M.! pId) > (pr' M.! maxPId)
+                                   then pId 
+                                   else maxPId) 
+                 0 
+                 (M.keys (M.filter (not . ourPlanet) ps)) 
+    log = []
+    orders = attackFromAll target gs
+    
+
+
 
 skynet :: GameState -> AIState
        -> ([Order], Log, AIState)
