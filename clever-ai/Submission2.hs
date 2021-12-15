@@ -301,9 +301,7 @@ planetRankRush gs@(GameState ps _ _) ai = (orders, [], ai {pr = mpr})
 
 skynet :: GameState -> AIState
        -> ([Order], Log, AIState)
-skynet gs ai
-  | turn ai < 20 = gainTerritory gs ai 
-  | otherwise    = zergRush gs ai
+skynet gs ai = gainTerritory gs ai
 
 gainTerritory :: GameState -> AIState 
        -> ([Order], Log, AIState)
@@ -311,7 +309,7 @@ gainTerritory gs@(GameState ps _ _) ai = (os, log', ai)
   where
     -- Spread thinly to fastest growing and nearest planets
     ops = M.keys (M.filter ourPlanet ps)
-    nps = M.keys (M.filter (\(Planet o _ _) -> o == Neutral) ps)
+    nps = M.keys (M.filter enemyPlanet ps)
     -- all shortest distances from our planets to neutral planets
     os = concat (map (perPlanetOrder nps) ops)
     log' = (map show os)
@@ -319,8 +317,8 @@ gainTerritory gs@(GameState ps _ _) ai = (os, log', ai)
     perPlanetOrder :: [PlanetId] -> PlanetId -> [Order]
     perPlanetOrder nps src = map (\wId -> Order wId (Ships shipsPerOrder)) best_wormholes
       where
-        split = 1
-        best_wormholes = take split (map snd ((reverse . sort) (map (planetToPri src) nps)))
+        split = 0
+        best_wormholes = take 1 (map snd ((reverse . sort) (map (planetToPri src) nps)))
         (Planet _ (Ships s) _) = ps M.! src
         shipsPerOrder = s `div` (split + 1)
 
