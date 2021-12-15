@@ -63,7 +63,7 @@ findEnemyPlanet (GameState ps _ _) = case M.keys (M.filter enemyPlanet ps) of
 
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId ss st
-  | ourPlanet srcp = [(Order wId cappedShips)]
+  | ourPlanet srcp = [(Order wId ships)]
   | otherwise     = []
   where
     Wormhole (Source src) (Target dst) _ = lookupWormhole wId st
@@ -73,10 +73,6 @@ send wId ss st
     ships = case ss of
       Nothing -> srcShips
       _       -> minimum [fromJust ss, srcShips]
-
-    cappedShips
-      | enemyPlanet dstp = minimum [ships, dstShips]
-      | otherwise        = ships
 
 shortestPath :: PlanetId -> PlanetId -> GameState 
              -> Maybe (Path (WormholeId, Wormhole))
@@ -109,10 +105,8 @@ attackFromAll targetId st@(GameState ps _ _)
     wIds       = map (getWormholeId . fromJust) (filter isJust paths)
 
     getWormholeId :: Path (WormholeId, Wormhole) -> WormholeId
-    getWormholeId (Path _ ((wId, _) : _)) = wId
+    getWormholeId (Path _ ws) = let (wId, _) = last ws in wId
     
-
-
 zergRush :: GameState -> AIState 
          -> ([Order], Log, AIState)
 zergRush gs ai = undefined
@@ -254,8 +248,7 @@ nextPlanetRank g@(GameState planets _ _) pr i =
  
   growths :: PlanetId -> PlanetRank
   growths j = (fromIntegral . sum)
-      (map (\pId -> let (Planet _ _ g) = planets M.! pId 
-                    in g) 
+      (map (\pId -> let (Planet _ _ g) = planets M.! pId in g) 
            (sources j))
 
 checkPlanetRanks :: PlanetRanks -> PlanetRank
