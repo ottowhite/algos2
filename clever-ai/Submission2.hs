@@ -61,6 +61,11 @@ findEnemyPlanet (GameState ps _ _) = case M.keys (M.filter enemyPlanet ps) of
   []         -> Nothing
   (ep : eps) -> Just ep
 
+findOtherPlanet :: GameState -> Maybe PlanetId
+findOtherPlanet (GameState ps _ _) = case M.keys (M.filter (not . ourPlanet) ps) of
+  []         -> Nothing
+  (ep : eps) -> Just ep
+
 send :: WormholeId -> Maybe Ships -> GameState -> [Order]
 send wId ss st
   | ourPlanet srcp = [(Order wId ships)]
@@ -109,8 +114,26 @@ attackFromAll targetId st@(GameState ps _ _)
     
 zergRush :: GameState -> AIState 
          -> ([Order], Log, AIState)
-zergRush gs ai = undefined
+zergRush gs@(GameState planets _ _) ai = (orders, 
+                                          [], 
+                                          ai {rushTarget = target'} )
+  where
+    ourPlanetId :: PlanetId -> Bool
+    ourPlanetId = ourPlanet . ((flip lookupPlanet) gs)
 
+    target 
+      | isNothing (rushTarget ai) ||
+        (ourPlanetId . fromJust) (rushTarget ai) = findEnemyPlanet gs
+      | otherwise                                = rushTarget ai
+
+    target'
+      | isNothing target = findOtherPlanet gs
+      | otherwise        = target
+
+    orders
+      | isNothing target' = []
+      | otherwise         = attackFromAll (fromJust target') gs
+      
 newtype PageRank = PageRank Double
   deriving (Num, Eq, Ord, Fractional)
  
